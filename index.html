@@ -1,0 +1,1898 @@
+<!DOCTYPE html>
+<html lang="ms">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PMW Group Executive Dashboard</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        :root {
+            --primary-blue: #1e3a8a;
+            --secondary-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-yellow: #f59e0b;
+            --accent-red: #ef4444;
+            --text-primary: #ffffff;
+            --text-secondary: #e2e8f0;
+            --glass-bg: rgba(255, 255, 255, 0.1);
+            --glass-border: rgba(255, 255, 255, 0.2);
+            --shadow-light: 0 4px 16px rgba(0, 0, 0, 0.1);
+            --shadow-heavy: 0 8px 32px rgba(0, 0, 0, 0.2);
+            --border-radius: 16px;
+            --spacing-xs: 8px;
+            --spacing-sm: 12px;
+            --spacing-md: 16px;
+            --spacing-lg: 24px;
+            --spacing-xl: 32px;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 30%, #334155 100%);
+            color: var(--text-primary);
+            overflow: hidden;
+            line-height: 1.5;
+            font-weight: 400;
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
+        }
+
+        /* CONTAINER & SLIDES */
+        .container {
+            width: 100vw;
+            height: 100vh;
+            position: relative;
+        }
+
+        .slide {
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            top: 0;
+            left: 0;
+            display: none;
+            padding: var(--spacing-xl);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: var(--glass-border) transparent;
+        }
+
+        .slide::-webkit-scrollbar {
+            width: 6px;
+        }
+
+        .slide::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .slide::-webkit-scrollbar-thumb {
+            background: var(--glass-border);
+            border-radius: 3px;
+        }
+
+        .slide.active {
+            display: block;
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from { 
+                opacity: 0; 
+                transform: translateY(20px) scale(0.98);
+            }
+            to { 
+                opacity: 1; 
+                transform: translateY(0) scale(1);
+            }
+        }
+
+        /* TYPOGRAPHY */
+        .slide-header {
+            text-align: center;
+            margin-bottom: var(--spacing-xl);
+            padding-bottom: var(--spacing-lg);
+            border-bottom: 2px solid var(--glass-border);
+        }
+
+        .slide-title {
+            font-size: clamp(1.75rem, 4vw, 2.5rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-sm);
+            background: linear-gradient(135deg, #ffffff 0%, #e2e8f0 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            letter-spacing: -0.02em;
+        }
+
+        .slide-subtitle {
+            font-size: clamp(0.875rem, 2vw, 1.125rem);
+            color: var(--text-secondary);
+            font-weight: 400;
+        }
+
+        /* LAYOUT SYSTEMS */
+        .grid-2 {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: var(--spacing-lg);
+            align-items: start;
+        }
+
+        .grid-3 {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: var(--spacing-md);
+        }
+
+        .grid-4 {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .stack {
+            display: flex;
+            flex-direction: column;
+            gap: var(--spacing-md);
+        }
+
+        /* GLASS COMPONENTS */
+        .glass-card {
+            background: var(--glass-bg);
+            backdrop-filter: blur(20px);
+            border-radius: var(--border-radius);
+            border: 1px solid var(--glass-border);
+            box-shadow: var(--shadow-light);
+            position: relative;
+            overflow: hidden;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        .glass-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.05), transparent);
+            transition: left 0.6s ease;
+        }
+
+        .glass-card:hover::before {
+            left: 100%;
+        }
+
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow-heavy);
+            border-color: rgba(255, 255, 255, 0.3);
+        }
+
+        /* METRIC CARDS */
+        .metric-card {
+            padding: var(--spacing-lg);
+            text-align: center;
+        }
+
+        .metric-value {
+            font-size: clamp(1.5rem, 3vw, 2rem);
+            font-weight: 700;
+            margin-bottom: var(--spacing-xs);
+            color: var(--text-primary);
+        }
+
+        .metric-label {
+            font-size: 0.875rem;
+            color: var(--text-secondary);
+            margin-bottom: var(--spacing-sm);
+            font-weight: 500;
+        }
+
+        .metric-change {
+            font-size: 0.8rem;
+            padding: var(--spacing-xs) var(--spacing-sm);
+            border-radius: 20px;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            font-weight: 600;
+            letter-spacing: 0.01em;
+        }
+
+        .status-positive { 
+            background: rgba(16, 185, 129, 0.15); 
+            color: var(--accent-green);
+            border: 1px solid rgba(16, 185, 129, 0.3);
+        }
+        
+        .status-negative { 
+            background: rgba(239, 68, 68, 0.15); 
+            color: var(--accent-red);
+            border: 1px solid rgba(239, 68, 68, 0.3);
+        }
+        
+        .status-neutral { 
+            background: rgba(245, 158, 11, 0.15); 
+            color: var(--accent-yellow);
+            border: 1px solid rgba(245, 158, 11, 0.3);
+        }
+
+        /* CHART CONTAINERS */
+        .chart-container {
+            padding: var(--spacing-lg);
+            margin-bottom: var(--spacing-md);
+        }
+
+        .chart-title {
+            font-size: 1.25rem;
+            margin-bottom: var(--spacing-md);
+            text-align: center;
+            color: var(--text-secondary);
+            font-weight: 600;
+        }
+
+        .chart-wrapper {
+            position: relative;
+            height: 350px;
+        }
+
+        /* SUMMARY BOXES */
+        .summary-box {
+            padding: var(--spacing-lg);
+            border-left: 4px solid var(--accent-green);
+            position: relative;
+        }
+
+        .summary-title {
+            font-size: 1.125rem;
+            font-weight: 600;
+            margin-bottom: var(--spacing-sm);
+            color: var(--accent-green);
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .summary-content {
+            font-size: 0.9rem;
+            line-height: 1.6;
+            color: var(--text-secondary);
+        }
+
+        .summary-content strong {
+            color: var(--text-primary);
+            font-weight: 600;
+        }
+
+        .summary-section {
+            margin-bottom: var(--spacing-md);
+        }
+
+        .summary-section:last-child {
+            margin-bottom: 0;
+        }
+
+        /* TABLES */
+        .table-container {
+            overflow-x: auto;
+            -webkit-overflow-scrolling: touch;
+            border-radius: var(--border-radius);
+            border: 1px solid var(--glass-border);
+        }
+
+        .data-table {
+            width: 100%;
+            border-collapse: collapse;
+            background: rgba(255, 255, 255, 0.03);
+            font-size: 0.875rem;
+        }
+
+        .data-table th {
+            background: rgba(255, 255, 255, 0.1);
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: center;
+            font-weight: 600;
+            font-size: 0.8rem;
+            color: var(--text-secondary);
+            border-bottom: 1px solid var(--glass-border);
+        }
+
+        .data-table td {
+            padding: var(--spacing-sm) var(--spacing-md);
+            text-align: center;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            font-weight: 500;
+        }
+
+        .data-table tr:hover {
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        .data-table .row-highlight {
+            background: rgba(59, 130, 246, 0.1);
+        }
+
+        /* INSIGHT CARDS */
+        .insight-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: var(--spacing-md);
+            margin-bottom: var(--spacing-lg);
+        }
+
+        .insight-card {
+            padding: var(--spacing-md);
+            border-radius: var(--border-radius);
+            border-left: 4px solid;
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(10px);
+        }
+
+        .insight-card.type-success { border-left-color: var(--accent-green); }
+        .insight-card.type-warning { border-left-color: var(--accent-yellow); }
+        .insight-card.type-danger { border-left-color: var(--accent-red); }
+        .insight-card.type-info { border-left-color: var(--secondary-blue); }
+
+        .insight-title {
+            font-weight: 600;
+            margin-bottom: var(--spacing-xs);
+            font-size: 0.95rem;
+            display: flex;
+            align-items: center;
+            gap: var(--spacing-xs);
+        }
+
+        .insight-text {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            line-height: 1.5;
+        }
+
+        /* KPI DASHBOARD */
+        .kpi-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: var(--spacing-md);
+        }
+
+        .kpi-card {
+            padding: var(--spacing-md);
+            text-align: center;
+            position: relative;
+        }
+
+        .kpi-progress {
+            width: 100%;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 3px;
+            margin-top: var(--spacing-sm);
+            overflow: hidden;
+        }
+
+        .kpi-progress-fill {
+            height: 100%;
+            border-radius: 3px;
+            transition: width 1.2s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        /* NAVIGATION */
+        .navigation {
+            position: fixed;
+            bottom: var(--spacing-lg);
+            right: var(--spacing-md);
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            z-index: 1000;
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .navigation:hover,
+        .navigation.show {
+            opacity: 1;
+        }
+
+        .nav-btn {
+            padding: 6px 10px;
+            background: var(--glass-bg);
+            border: 1px solid var(--glass-border);
+            border-radius: 16px;
+            color: var(--text-primary);
+            cursor: pointer;
+            font-size: 0.7rem;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            backdrop-filter: blur(10px);
+            min-height: 28px;
+            min-width: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: var(--shadow-light);
+        }
+
+        .nav-btn:hover {
+            background: rgba(255, 255, 255, 0.15);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-light);
+        }
+
+        .nav-btn:active {
+            transform: translateY(0);
+        }
+
+        /* SLIDE INDICATORS */
+        .slide-indicator {
+            position: fixed;
+            bottom: var(--spacing-lg);
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            gap: var(--spacing-sm);
+            z-index: 1000;
+        }
+
+        .indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            background: rgba(255, 255, 255, 0.3);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            border: 1px solid var(--glass-border);
+        }
+
+        .indicator.active {
+            background: var(--text-primary);
+            transform: scale(1.2);
+            box-shadow: 0 0 12px rgba(255, 255, 255, 0.4);
+        }
+
+        .indicator:hover {
+            background: rgba(255, 255, 255, 0.6);
+        }
+
+        /* TREND INDICATORS */
+        .trend-indicator {
+            display: inline-block;
+            width: 0;
+            height: 0;
+            margin-left: 4px;
+        }
+
+        .trend-up {
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-bottom: 6px solid var(--accent-green);
+        }
+
+        .trend-down {
+            border-left: 4px solid transparent;
+            border-right: 4px solid transparent;
+            border-top: 6px solid var(--accent-red);
+        }
+
+        .trend-flat {
+            width: 8px;
+            height: 2px;
+            background: var(--accent-yellow);
+            margin-left: 4px;
+        }
+
+        /* SECTION DIVIDERS */
+        .section-divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--glass-border), transparent);
+            margin: var(--spacing-lg) 0;
+        }
+
+        /* STATUS BADGES */
+        .status-badge {
+            padding: 4px var(--spacing-xs);
+            border-radius: 12px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .status-excellent {
+            background: rgba(16, 185, 129, 0.2);
+            color: var(--accent-green);
+        }
+
+        .status-good {
+            background: rgba(59, 130, 246, 0.2);
+            color: var(--secondary-blue);
+        }
+
+        .status-warning {
+            background: rgba(245, 158, 11, 0.2);
+            color: var(--accent-yellow);
+        }
+
+        .status-critical {
+            background: rgba(239, 68, 68, 0.2);
+            color: var(--accent-red);
+        }
+
+        /* RESPONSIVE DESIGN */
+        @media (max-width: 1200px) {
+            .grid-3 {
+                grid-template-columns: repeat(2, 1fr);
+            }
+            
+            .insight-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        @media (max-width: 768px) {
+            :root {
+                --spacing-xl: 16px;
+                --spacing-lg: 12px;
+                --spacing-md: 8px;
+            }
+            
+            .slide {
+                padding: var(--spacing-md);
+            }
+            
+            .grid-2, .grid-3, .grid-4 {
+                grid-template-columns: 1fr;
+                gap: var(--spacing-md);
+            }
+            
+            .chart-wrapper {
+                height: 250px;
+            }
+            
+            .navigation:hover,
+            .navigation.show {
+                opacity: 1;
+            }
+            
+            .navigation {
+                bottom: var(--spacing-sm);
+                right: var(--spacing-sm);
+                flex-direction: row;
+                gap: 4px;
+            }
+            
+            .nav-btn {
+                min-width: 55px;
+                font-size: 0.65rem;
+                min-height: 32px;
+                padding: 4px 8px;
+            }
+            
+            .slide-indicator {
+                bottom: 60px;
+                gap: var(--spacing-md);
+            }
+            
+            .indicator {
+                width: 16px;
+                height: 16px;
+            }
+            
+            .data-table {
+                font-size: 0.75rem;
+            }
+            
+            .data-table th,
+            .data-table td {
+                padding: var(--spacing-xs);
+            }
+        }
+
+        @media (max-width: 480px) {
+            .slide-title {
+                font-size: 1.5rem;
+            }
+            
+            .slide-subtitle {
+                font-size: 0.875rem;
+            }
+            
+            .chart-wrapper {
+                height: 200px;
+            }
+            
+            .metric-card {
+                padding: var(--spacing-md);
+            }
+            
+            .chart-container {
+                padding: var(--spacing-md);
+            }
+        }
+
+        /* TOUCH OPTIMIZATIONS */
+        @media (hover: none) and (pointer: coarse) {
+            .glass-card:hover,
+            .nav-btn:hover,
+            .indicator:hover {
+                transform: none;
+            }
+            
+            .glass-card:active,
+            .nav-btn:active {
+                transform: scale(0.98);
+                opacity: 0.9;
+            }
+        }
+
+        /* PRINT STYLES */
+        @media print {
+            body {
+                background: white;
+                color: black;
+            }
+            
+            .navigation,
+            .slide-indicator {
+                display: none;
+            }
+            
+            .slide {
+                position: static;
+                display: block !important;
+                page-break-after: always;
+            }
+        }
+
+        /* HIGH CONTRAST MODE */
+        @media (prefers-contrast: high) {
+            :root {
+                --glass-bg: rgba(255, 255, 255, 0.2);
+                --glass-border: rgba(255, 255, 255, 0.4);
+            }
+        }
+
+        /* REDUCED MOTION */
+        @media (prefers-reduced-motion: reduce) {
+            *,
+            *::before,
+            *::after {
+                animation-duration: 0.01ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.01ms !important;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- SLIDE 1: EXECUTIVE DASHBOARD -->
+        <div class="slide active">
+            <div class="slide-header">
+                <h1 class="slide-title">PMW GROUP EXECUTIVE DASHBOARD</h1>
+                <p class="slide-subtitle">Comprehensive Financial Performance Analysis | Jan-Jul 2025</p>
+            </div>
+
+            <div class="grid-4">
+                <div class="glass-card metric-card">
+                    <div class="metric-value">RM 31.84M</div>
+                    <div class="metric-label">Total Revenue (7 Months)</div>
+                    <div class="metric-change status-negative">-45% from Peak (Jan)</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">RM 10.85M</div>
+                    <div class="metric-label">Gross Profit</div>
+                    <div class="metric-change status-positive">65.92% Margin Maintained</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">RM 1.14M</div>
+                    <div class="metric-label">Net Profit</div>
+                    <div class="metric-change status-neutral">3.59% Net Margin</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">RM 4.55M</div>
+                    <div class="metric-label">Average Monthly Sales</div>
+                    <div class="metric-change status-negative">Declining Trend</div>
+                </div>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">📈 Revenue & Profitability Trend</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="overviewChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="stack">
+                    <div class="glass-card summary-box">
+                        <div class="summary-title">🎯 Executive Summary</div>
+                        <div class="summary-content">
+                            <div class="summary-section">
+                                <strong>Critical Issues:</strong><br>
+                                • 45% revenue decline from Jan to Jul<br>
+                                • Two loss-making months (Mar, Apr)<br>
+                                • Marketing ROI declining significantly
+                            </div>
+                            <div class="summary-section">
+                                <strong>Positive Indicators:</strong><br>
+                                • Gross margin stability (65.92%)<br>
+                                • HR cost optimization success<br>
+                                • Recovery signs in Jun-Jul
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="table-container">
+                        <table class="data-table">
+                            <thead>
+                                <tr>
+                                    <th>Key Metric</th>
+                                    <th>Current</th>
+                                    <th>Target</th>
+                                    <th>Status</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td><strong>Monthly Sales</strong></td>
+                                    <td>RM 3.7M</td>
+                                    <td>RM 5.0M</td>
+                                    <td><span class="status-badge status-critical">74%</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Net Margin</strong></td>
+                                    <td>3.59%</td>
+                                    <td>8.00%</td>
+                                    <td><span class="status-badge status-critical">45%</span></td>
+                                </tr>
+                                <tr class="row-highlight">
+                                    <td><strong>Gross Margin</strong></td>
+                                    <td>65.92%</td>
+                                    <td>65.00%</td>
+                                    <td><span class="status-badge status-excellent">101%</span></td>
+                                </tr>
+                                <tr>
+                                    <td><strong>Operating Efficiency</strong></td>
+                                    <td>30.49%</td>
+                                    <td>25.00%</td>
+                                    <td><span class="status-badge status-warning">82%</span></td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 2: MONTHLY DEEP DIVE -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1 class="slide-title">MONTHLY PERFORMANCE DEEP DIVE</h1>
+                <p class="slide-subtitle">Detailed Month-by-Month Analysis & Trends</p>
+            </div>
+
+            <div class="glass-card chart-container">
+                <h3 class="chart-title">📊 Complete Monthly Financial Performance</h3>
+                <div class="chart-wrapper">
+                    <canvas id="monthlyDetailChart"></canvas>
+                </div>
+            </div>
+
+            <div class="insight-grid">
+                <div class="insight-card type-success">
+                    <div class="insight-title">🏆 Best Performing Month</div>
+                    <div class="insight-text">
+                        <strong>January 2025:</strong> RM6.74M sales, 10.46% net margin, RM704K profit.
+                        Strong start with optimal cost control and high sales volume.
+                    </div>
+                </div>
+
+                <div class="insight-card type-danger">
+                    <div class="insight-title">⚠️ Crisis Months</div>
+                    <div class="insight-text">
+                        <strong>March & April:</strong> Combined losses of RM311K. 
+                        High operating costs (71.39% & 67.36%) with declining sales momentum.
+                    </div>
+                </div>
+
+                <div class="insight-card type-warning">
+                    <div class="insight-title">🔄 Recovery Pattern</div>
+                    <div class="insight-text">
+                        <strong>May-July:</strong> Consistent profitability return. 
+                        June showed first monthly growth (+4.4%) since January.
+                    </div>
+                </div>
+
+                <div class="insight-card type-info">
+                    <div class="insight-title">📈 Key Trend Indicators</div>
+                    <div class="insight-text">
+                        <strong>Stabilization:</strong> Last 3 months averaging 3.38% net margin.
+                        Sales stabilizing around RM3.7M monthly level.
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Month</th>
+                            <th>Sales (RM)</th>
+                            <th>MoM Change</th>
+                            <th>Gross Margin</th>
+                            <th>Net Margin</th>
+                            <th>HR Cost %</th>
+                            <th>Marketing %</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="row-highlight">
+                            <td><strong>Jan</strong></td>
+                            <td>6,736,434</td>
+                            <td>-</td>
+                            <td>36.75%</td>
+                            <td class="status-positive">10.46%</td>
+                            <td>11.61%</td>
+                            <td>5.95%</td>
+                            <td><span class="status-badge status-excellent">Excellent</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Feb</strong></td>
+                            <td>5,592,140</td>
+                            <td>-17.0% <span class="trend-down"></span></td>
+                            <td>33.73%</td>
+                            <td class="status-positive">6.81%</td>
+                            <td>13.65%</td>
+                            <td>4.90%</td>
+                            <td><span class="status-badge status-good">Good</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Mar</strong></td>
+                            <td>4,265,839</td>
+                            <td>-23.7% <span class="trend-down"></span></td>
+                            <td>28.61%</td>
+                            <td class="status-negative">-4.32%</td>
+                            <td>16.07%</td>
+                            <td>9.52%</td>
+                            <td><span class="status-badge status-critical">Loss</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Apr</strong></td>
+                            <td>4,019,040</td>
+                            <td>-5.8% <span class="trend-down"></span></td>
+                            <td>32.64%</td>
+                            <td class="status-negative">-3.15%</td>
+                            <td>15.92%</td>
+                            <td>9.70%</td>
+                            <td><span class="status-badge status-critical">Loss</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>May</strong></td>
+                            <td>3,677,200</td>
+                            <td>-8.5% <span class="trend-down"></span></td>
+                            <td>40.22%</td>
+                            <td class="status-positive">4.89%</td>
+                            <td>15.34%</td>
+                            <td>9.25%</td>
+                            <td><span class="status-badge status-warning">Recovery</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jun</strong></td>
+                            <td>3,837,731</td>
+                            <td>+4.4% <span class="trend-up"></span></td>
+                            <td>32.13%</td>
+                            <td class="status-positive">2.10%</td>
+                            <td>11.83%</td>
+                            <td>8.67%</td>
+                            <td><span class="status-badge status-good">Growth</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Jul</strong></td>
+                            <td>3,715,239</td>
+                            <td>-3.2% <span class="trend-down"></span></td>
+                            <td>33.53%</td>
+                            <td class="status-positive">3.16%</td>
+                            <td>10.92%</td>
+                            <td>7.86%</td>
+                            <td><span class="status-badge status-good">Stable</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLIDE 3: QUARTERLY ANALYSIS -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1 class="slide-title">QUARTERLY PERFORMANCE BREAKDOWN</h1>
+                <p class="slide-subtitle">Q1, Q2, Q3 Strategic Analysis & Comparison</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">📊 Quarterly Revenue Performance</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="quarterlyChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">🎯 Quarterly Margins</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="quarterlyMarginsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="glass-card summary-box">
+                    <div class="summary-title">Q1 2025: Strong Foundation</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Performance:</strong><br>
+                            • Revenue: RM16.59M<br>
+                            • Net Margin: 5.43%<br>
+                            • Monthly Avg: RM5.53M
+                        </div>
+                        <div class="summary-section">
+                            <strong>Key Strengths:</strong><br>
+                            • High initial momentum<br>
+                            • Strong profitability<br>
+                            • Controlled expenses
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card summary-box" style="border-left-color: var(--accent-red);">
+                    <div class="summary-title" style="color: var(--accent-red);">Q2 2025: Crisis & Recovery</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Performance:</strong><br>
+                            • Revenue: RM11.53M (-30.5%)<br>
+                            • Net Margin: 1.16%<br>
+                            • Monthly Avg: RM3.84M
+                        </div>
+                        <div class="summary-section">
+                            <strong>Recovery Signs:</strong><br>
+                            • May turnaround<br>
+                            • June growth (+4.4%)
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card summary-box" style="border-left-color: var(--accent-yellow);">
+                    <div class="summary-title" style="color: var(--accent-yellow);">Q3 2025: Stabilization</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Performance (Jul only):</strong><br>
+                            • Revenue: RM3.72M<br>
+                            • Net Margin: 3.16%<br>
+                            • Consistent with Q2 avg
+                        </div>
+                        <div class="summary-section">
+                            <strong>Focus Area:</strong><br>
+                            • Sales volume growth<br>
+                            • Cost optimization
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="kpi-grid">
+                <div class="glass-card kpi-card">
+                    <h4>Q1 Performance Score</h4>
+                    <div class="metric-value">85%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 85%; background: var(--accent-green);"></div>
+                    </div>
+                    <small>Strong start, declining trend</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Q2 Performance Score</h4>
+                    <div class="metric-value">45%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 45%; background: var(--accent-red);"></div>
+                    </div>
+                    <small>Crisis period, recovery started</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Q3 Performance Score</h4>
+                    <div class="metric-value">70%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 70%; background: var(--accent-yellow);"></div>
+                    </div>
+                    <small>Stabilizing, positive trend</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Overall Efficiency</h4>
+                    <div class="metric-value">67%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 67%; background: var(--secondary-blue);"></div>
+                    </div>
+                    <small>Room for improvement</small>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 4: DIVISIONAL ANALYSIS -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1 class="slide-title">DIVISIONAL PERFORMANCE ANALYSIS</h1>
+                <p class="slide-subtitle">Department-wise Breakdown & Efficiency Metrics</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">💼 Cost Structure by Division</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="divisionPieChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">📈 Monthly Divisional Trends</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="divisionTrendChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="insight-grid">
+                <div class="insight-card type-success">
+                    <div class="insight-title">🏭 Operations Division</div>
+                    <div class="insight-text">
+                        <strong>Cost: 65.92% of sales</strong><br>
+                        Excellent gross margin maintenance. Consistent 65-66% cost ratio shows operational efficiency.
+                    </div>
+                </div>
+
+                <div class="insight-card type-warning">
+                    <div class="insight-title">👥 Human Resources</div>
+                    <div class="insight-text">
+                        <strong>Cost: 13.49% of sales</strong><br>
+                        Significant improvement from 16.07% (Mar) to 10.92% (Jul). Successful cost optimization.
+                    </div>
+                </div>
+
+                <div class="insight-card type-danger">
+                    <div class="insight-title">📢 Marketing Division</div>
+                    <div class="insight-text">
+                        <strong>Cost: 7.72% of sales</strong><br>
+                        ROI declining with high costs vs results. Needs immediate strategy review.
+                    </div>
+                </div>
+
+                <div class="insight-card type-info">
+                    <div class="insight-title">🏢 Administration</div>
+                    <div class="insight-text">
+                        <strong>Cost: 8.48% of sales</strong><br>
+                        Controlled but increasing. SST (4.58%) is major component.
+                    </div>
+                </div>
+            </div>
+
+            <div class="table-container">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Division</th>
+                            <th>Total Cost (RM)</th>
+                            <th>% of Sales</th>
+                            <th>Efficiency Rating</th>
+                            <th>Trend</th>
+                            <th>Action Required</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr class="row-highlight">
+                            <td><strong>Operations</strong></td>
+                            <td>20,991,511</td>
+                            <td>65.92%</td>
+                            <td>⭐⭐⭐⭐⭐</td>
+                            <td><span class="trend-flat"></span> Stable</td>
+                            <td><span class="status-badge status-good">Maintain</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Human Resources</strong></td>
+                            <td>4,294,443</td>
+                            <td>13.49%</td>
+                            <td>⭐⭐⭐⭐</td>
+                            <td><span class="trend-up"></span> Improving</td>
+                            <td><span class="status-badge status-good">Continue optimization</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Marketing</strong></td>
+                            <td>2,458,038</td>
+                            <td>7.72%</td>
+                            <td>⭐⭐</td>
+                            <td><span class="trend-down"></span> Declining ROI</td>
+                            <td><span class="status-badge status-critical">Urgent review</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Administration</strong></td>
+                            <td>2,699,492</td>
+                            <td>8.48%</td>
+                            <td>⭐⭐⭐</td>
+                            <td><span class="trend-up"></span> Rising</td>
+                            <td><span class="status-badge status-warning">Monitor closely</span></td>
+                        </tr>
+                        <tr>
+                            <td><strong>Logistics</strong></td>
+                            <td>256,422</td>
+                            <td>0.81%</td>
+                            <td>⭐⭐⭐⭐⭐</td>
+                            <td><span class="trend-flat"></span> Optimal</td>
+                            <td><span class="status-badge status-excellent">Maintain excellence</span></td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <!-- SLIDE 5: FINANCIAL HEALTH -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1 class="slide-title">FINANCIAL HEALTH & RISK ANALYSIS</h1>
+                <p class="slide-subtitle">Cash Flow, Profitability Ratios & Risk Assessment</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">💰 Monthly Cash Flow Analysis</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="cashFlowChart"></canvas>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">⚖️ Financial Health Radar</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="healthRadarChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-4">
+                <div class="glass-card metric-card">
+                    <div class="metric-value">High</div>
+                    <div class="metric-label">Revenue Decline Risk</div>
+                    <div class="metric-change status-negative">-45% from Peak</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">Low</div>
+                    <div class="metric-label">Operational Risk</div>
+                    <div class="metric-change status-positive">65.92% Stable Margin</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">Medium</div>
+                    <div class="metric-label">Profitability Risk</div>
+                    <div class="metric-change status-neutral">3.59% Average</div>
+                </div>
+                <div class="glass-card metric-card">
+                    <div class="metric-value">Medium</div>
+                    <div class="metric-label">Cost Control Risk</div>
+                    <div class="metric-change status-neutral">30.49% OpEx Ratio</div>
+                </div>
+            </div>
+
+            <div class="insight-grid">
+                <div class="insight-card type-danger">
+                    <div class="insight-title">🚨 High Risk Areas</div>
+                    <div class="insight-text">
+                        <strong>Revenue Volatility:</strong> 45% decline indicates market challenges.<br>
+                        <strong>Loss Months:</strong> March & April losses show vulnerability.<br>
+                        <strong>Marketing ROI:</strong> Declining effectiveness needs attention.
+                    </div>
+                </div>
+
+                <div class="insight-card type-warning">
+                    <div class="insight-title">⚠️ Medium Risk Areas</div>
+                    <div class="insight-text">
+                        <strong>Cash Flow:</strong> Irregular patterns affect planning.<br>
+                        <strong>Cost Structure:</strong> Fixed costs high relative to sales.<br>
+                        <strong>Market Position:</strong> Need competitive advantage.
+                    </div>
+                </div>
+
+                <div class="insight-card type-success">
+                    <div class="insight-title">✅ Strengths & Opportunities</div>
+                    <div class="insight-text">
+                        <strong>Operational Excellence:</strong> Stable gross margins.<br>
+                        <strong>Recovery Pattern:</strong> Jun-Jul stabilization.<br>
+                        <strong>Efficiency Gains:</strong> HR optimization success.
+                    </div>
+                </div>
+
+                <div class="insight-card type-info">
+                    <div class="insight-title">📊 Key Thresholds</div>
+                    <div class="insight-text">
+                        <strong>Break-even:</strong> ~RM3.2M monthly sales.<br>
+                        <strong>Optimal Range:</strong> RM4.5-5.5M monthly.<br>
+                        <strong>Growth Mode:</strong> RM6M+ monthly target.
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- SLIDE 6: STRATEGIC ACTION PLAN -->
+        <div class="slide">
+            <div class="slide-header">
+                <h1 class="slide-title">STRATEGIC ACTION PLAN Q4 2025</h1>
+                <p class="slide-subtitle">Recovery Strategy & Implementation Roadmap</p>
+            </div>
+
+            <div class="grid-2">
+                <div class="stack">
+                    <div class="glass-card summary-box">
+                        <div class="summary-title">🎯 IMMEDIATE PRIORITIES (30 Days)</div>
+                        <div class="summary-content">
+                            <div class="summary-section">
+                                <strong>1. Marketing ROI Audit</strong><br>
+                                • Analyze channel performance<br>
+                                • Eliminate low-ROI activities<br>
+                                • Optimize cashback strategy
+                            </div>
+                            <div class="summary-section">
+                                <strong>2. Sales Recovery Plan</strong><br>
+                                • Investigate decline causes<br>
+                                • Customer retention program<br>
+                                • Product mix optimization
+                            </div>
+                            <div class="summary-section">
+                                <strong>3. Cost Structure Review</strong><br>
+                                • Maintain HR efficiency gains<br>
+                                • Negotiate utility rates<br>
+                                • Administrative optimization
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="glass-card summary-box" style="border-left-color: var(--secondary-blue);">
+                        <div class="summary-title" style="color: var(--secondary-blue);">🚀 Q4 TARGETS</div>
+                        <div class="summary-content">
+                            <div class="summary-section">
+                                <strong>Revenue Progression:</strong><br>
+                                • August: RM4.0M (+7.7%)<br>
+                                • September: RM4.2M (+5%)<br>
+                                • October: RM4.5M (+7%)<br>
+                                • November: RM4.8M (+7%)<br>
+                                • December: RM5.0M (+4%)
+                            </div>
+                            <div class="summary-section">
+                                <strong>Profitability Goals:</strong><br>
+                                • Target: 5%+ net margin<br>
+                                • Marketing: <5% of sales<br>
+                                • Q4 profit: RM1.1M
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card chart-container">
+                    <h3 class="chart-title">🎯 Q4 Recovery Targets</h3>
+                    <div class="chart-wrapper">
+                        <canvas id="targetsChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-3">
+                <div class="glass-card summary-box">
+                    <div class="summary-title">📈 SALES STRATEGY</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Customer Acquisition:</strong><br>
+                            • Digital marketing focus<br>
+                            • Referral programs<br>
+                            • Partnership development
+                        </div>
+                        <div class="summary-section">
+                            <strong>Market Expansion:</strong><br>
+                            • New product categories<br>
+                            • Geographic expansion<br>
+                            • Online channel growth
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card summary-box" style="border-left-color: var(--accent-yellow);">
+                    <div class="summary-title" style="color: var(--accent-yellow);">💰 COST OPTIMIZATION</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Marketing Efficiency:</strong><br>
+                            • ROI-based allocation<br>
+                            • Performance focus<br>
+                            • Reduce traditional ads
+                        </div>
+                        <div class="summary-section">
+                            <strong>Administrative:</strong><br>
+                            • Technology adoption<br>
+                            • Utility optimization<br>
+                            • Space utilization
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-card summary-box" style="border-left-color: var(--secondary-blue);">
+                    <div class="summary-title" style="color: var(--secondary-blue);">📊 MONITORING</div>
+                    <div class="summary-content">
+                        <div class="summary-section">
+                            <strong>Weekly Tracking:</strong><br>
+                            • Daily sales monitoring<br>
+                            • Marketing spend tracking<br>
+                            • Cash flow management
+                        </div>
+                        <div class="summary-section">
+                            <strong>Monthly Reviews:</strong><br>
+                            • P&L deep dive<br>
+                            • Department performance<br>
+                            • Target vs actual analysis
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="section-divider"></div>
+
+            <div class="kpi-grid">
+                <div class="glass-card kpi-card">
+                    <h4>Q4 Revenue Target</h4>
+                    <div class="metric-value">RM 22.5M</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 0%; background: var(--accent-green);" id="revenueProgress"></div>
+                    </div>
+                    <small>Target: 95% achievement rate</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Profit Target</h4>
+                    <div class="metric-value">RM 1.1M</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 0%; background: var(--accent-yellow);" id="profitProgress"></div>
+                    </div>
+                    <small>5% net margin target</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Cost Optimization</h4>
+                    <div class="metric-value">-15%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 35%; background: var(--secondary-blue);"></div>
+                    </div>
+                    <small>Marketing cost reduction</small>
+                </div>
+
+                <div class="glass-card kpi-card">
+                    <h4>Market Recovery</h4>
+                    <div class="metric-value">+25%</div>
+                    <div class="kpi-progress">
+                        <div class="kpi-progress-fill" style="width: 20%; background: var(--accent-green);"></div>
+                    </div>
+                    <small>Growth from July baseline</small>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Navigation Controls -->
+    <div class="navigation">
+        <button class="nav-btn" onclick="previousSlide()">◀</button>
+        <button class="nav-btn" onclick="nextSlide()">▶</button>
+    </div>
+
+    <!-- Slide Indicators -->
+    <div class="slide-indicator">
+        <div class="indicator active" onclick="goToSlide(0)"></div>
+        <div class="indicator" onclick="goToSlide(1)"></div>
+        <div class="indicator" onclick="goToSlide(2)"></div>
+        <div class="indicator" onclick="goToSlide(3)"></div>
+        <div class="indicator" onclick="goToSlide(4)"></div>
+        <div class="indicator" onclick="goToSlide(5)"></div>
+    </div>
+
+    <script>
+        // NAVIGATION VISIBILITY
+        const navigation = document.querySelector('.navigation');
+        let hideTimeout;
+
+        function showNavigation() {
+            navigation.classList.add('show');
+            clearTimeout(hideTimeout);
+            hideTimeout = setTimeout(() => {
+                navigation.classList.remove('show');
+            }, 3000);
+        }
+
+        // Show navigation on mouse move, touch, or key press
+        document.addEventListener('mousemove', showNavigation);
+        document.addEventListener('touchstart', showNavigation);
+        document.addEventListener('keydown', showNavigation);
+        document.addEventListener('click', showNavigation);
+
+        // Show navigation initially then hide
+        setTimeout(() => {
+            showNavigation();
+        }, 500);
+
+        // NAVIGATION SYSTEM
+        let currentSlide = 0;
+        const slides = document.querySelectorAll('.slide');
+        const indicators = document.querySelectorAll('.indicator');
+
+        function showSlide(index) {
+            slides.forEach(slide => slide.classList.remove('active'));
+            indicators.forEach(indicator => indicator.classList.remove('active'));
+            
+            slides[index].classList.add('active');
+            indicators[index].classList.add('active');
+            currentSlide = index;
+        }
+
+        function nextSlide() {
+            showSlide((currentSlide + 1) % slides.length);
+        }
+
+        function previousSlide() {
+            showSlide((currentSlide - 1 + slides.length) % slides.length);
+        }
+
+        function goToSlide(index) {
+            showSlide(index);
+        }
+
+        // KEYBOARD NAVIGATION
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'ArrowRight' || e.key === ' ') nextSlide();
+            if (e.key === 'ArrowLeft') previousSlide();
+            if (e.key === 'Escape') goToSlide(0);
+            if (e.key >= '1' && e.key <= '6') goToSlide(parseInt(e.key) - 1);
+        });
+
+        // TOUCH NAVIGATION
+        let startX = 0;
+        let startY = 0;
+        let isSwiping = false;
+
+        document.addEventListener('touchstart', function(e) {
+            startX = e.touches[0].clientX;
+            startY = e.touches[0].clientY;
+            isSwiping = true;
+        }, { passive: true });
+
+        document.addEventListener('touchmove', function(e) {
+            if (!isSwiping) return;
+            
+            const diffX = e.touches[0].clientX - startX;
+            const diffY = e.touches[0].clientY - startY;
+            
+            if (Math.abs(diffX) > Math.abs(diffY) && Math.abs(diffX) > 50) {
+                e.preventDefault();
+            }
+        }, { passive: false });
+
+        document.addEventListener('touchend', function(e) {
+            if (!isSwiping) return;
+            isSwiping = false;
+            
+            const endX = e.changedTouches[0].clientX;
+            const diffX = endX - startX;
+            
+            if (Math.abs(diffX) > 80) {
+                if (diffX > 0) {
+                    previousSlide();
+                } else {
+                    nextSlide();
+                }
+            }
+        }, { passive: true });
+
+        // CHART CONFIGURATIONS
+        Chart.defaults.color = '#e2e8f0';
+        Chart.defaults.borderColor = 'rgba(226, 232, 240, 0.1)';
+        Chart.defaults.backgroundColor = 'rgba(226, 232, 240, 0.05)';
+
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: {
+                legend: {
+                    labels: {
+                        usePointStyle: true,
+                        padding: 20,
+                        font: { weight: 500 }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    grid: { 
+                        color: 'rgba(226, 232, 240, 0.1)',
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        font: { weight: 500 }
+                    }
+                },
+                x: {
+                    grid: { 
+                        color: 'rgba(226, 232, 240, 0.05)',
+                        lineWidth: 1
+                    },
+                    ticks: {
+                        font: { weight: 500 }
+                    }
+                }
+            }
+        };
+
+        // OVERVIEW CHART
+        const overviewCtx = document.getElementById('overviewChart').getContext('2d');
+        new Chart(overviewCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Sales (RM M)',
+                    data: [6.74, 5.59, 4.27, 4.02, 3.68, 3.84, 3.72],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    yAxisID: 'y'
+                }, {
+                    label: 'Net Margin (%)',
+                    data: [10.46, 6.81, -4.32, -3.15, 4.89, 2.10, 3.16],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: 6,
+                    pointHoverRadius: 8,
+                    yAxisID: 'y1'
+                }]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: {
+                        ...commonOptions.scales.y,
+                        type: 'linear',
+                        display: true,
+                        position: 'left',
+                        title: { display: true, text: 'Sales (RM M)', color: '#e2e8f0' }
+                    },
+                    y1: {
+                        type: 'linear',
+                        display: true,
+                        position: 'right',
+                        title: { display: true, text: 'Net Margin (%)', color: '#e2e8f0' },
+                        grid: { drawOnChartArea: false }
+                    }
+                }
+            }
+        });
+
+        // MONTHLY DETAIL CHART
+        const monthlyDetailCtx = document.getElementById('monthlyDetailChart').getContext('2d');
+        new Chart(monthlyDetailCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Sales (RM M)',
+                    data: [6.74, 5.59, 4.27, 4.02, 3.68, 3.84, 3.72],
+                    backgroundColor: [
+                        '#10b981', '#3b82f6', '#ef4444', '#ef4444', 
+                        '#f59e0b', '#10b981', '#3b82f6'
+                    ],
+                    borderRadius: 8,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // QUARTERLY CHART
+        const quarterlyCtx = document.getElementById('quarterlyChart').getContext('2d');
+        new Chart(quarterlyCtx, {
+            type: 'line',
+            data: {
+                labels: ['Q1 2025', 'Q2 2025', 'Q3 2025*'],
+                datasets: [{
+                    label: 'Revenue (RM M)',
+                    data: [16.59, 11.53, 3.72],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 4,
+                    pointRadius: 10,
+                    pointHoverRadius: 14,
+                    fill: true,
+                    tension: 0.3
+                }]
+            },
+            options: commonOptions
+        });
+
+        // QUARTERLY MARGINS CHART
+        const quarterlyMarginsCtx = document.getElementById('quarterlyMarginsChart').getContext('2d');
+        new Chart(quarterlyMarginsCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Q1 Net Margin (5.43%)', 'Q2 Net Margin (1.16%)', 'Q3 Net Margin (3.16%)'],
+                datasets: [{
+                    data: [5.43, 1.16, 3.16],
+                    backgroundColor: ['#10b981', '#ef4444', '#f59e0b'],
+                    borderWidth: 3,
+                    borderColor: 'rgba(255,255,255,0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '60%',
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: { 
+                            padding: 15,
+                            font: { size: 11, weight: 500 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // DIVISION PIE CHART
+        const divisionPieCtx = document.getElementById('divisionPieChart').getContext('2d');
+        new Chart(divisionPieCtx, {
+            type: 'doughnut',
+            data: {
+                labels: ['Operations (65.92%)', 'HR (13.49%)', 'Marketing (7.72%)', 'Admin (8.48%)', 'Logistics (0.81%)'],
+                datasets: [{
+                    data: [65.92, 13.49, 7.72, 8.48, 0.81],
+                    backgroundColor: ['#6366f1', '#8b5cf6', '#ec4899', '#f59e0b', '#10b981'],
+                    borderWidth: 3,
+                    borderColor: 'rgba(255,255,255,0.1)'
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                cutout: '50%',
+                plugins: {
+                    legend: {
+                        position: 'right',
+                        labels: { 
+                            padding: 12,
+                            font: { size: 10, weight: 500 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // DIVISION TREND CHART
+        const divisionTrendCtx = document.getElementById('divisionTrendChart').getContext('2d');
+        new Chart(divisionTrendCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'HR Cost %',
+                    data: [11.61, 13.65, 16.07, 15.92, 15.34, 11.83, 10.92],
+                    borderColor: '#8b5cf6',
+                    backgroundColor: 'rgba(139, 92, 246, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 5
+                }, {
+                    label: 'Marketing Cost %',
+                    data: [5.95, 4.90, 9.52, 9.70, 9.25, 8.67, 7.86],
+                    borderColor: '#ec4899',
+                    backgroundColor: 'rgba(236, 72, 153, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 5
+                }, {
+                    label: 'Admin Cost %',
+                    data: [7.44, 7.13, 7.29, 9.54, 10.47, 9.08, 9.70],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    pointRadius: 5
+                }]
+            },
+            options: commonOptions
+        });
+
+        // CASH FLOW CHART
+        const cashFlowCtx = document.getElementById('cashFlowChart').getContext('2d');
+        new Chart(cashFlowCtx, {
+            type: 'bar',
+            data: {
+                labels: ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul'],
+                datasets: [{
+                    label: 'Net Cash Flow (RM K)',
+                    data: [704, 381, -184, -127, 180, 81, 117],
+                    backgroundColor: function(context) {
+                        return context.parsed.y >= 0 ? '#10b981' : '#ef4444';
+                    },
+                    borderRadius: 8,
+                    borderWidth: 0
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+
+        // HEALTH RADAR CHART
+        const healthRadarCtx = document.getElementById('healthRadarChart').getContext('2d');
+        new Chart(healthRadarCtx, {
+            type: 'radar',
+            data: {
+                labels: ['Revenue Growth', 'Profitability', 'Cost Control', 'Cash Flow', 'Market Position', 'Efficiency'],
+                datasets: [{
+                    label: 'Current Performance',
+                    data: [25, 45, 70, 55, 40, 65],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }, {
+                    label: 'Industry Benchmark',
+                    data: [60, 70, 75, 65, 60, 70],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    borderWidth: 3,
+                    pointRadius: 6,
+                    pointHoverRadius: 8
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        min: 0,
+                        max: 100,
+                        ticks: { 
+                            display: false,
+                            stepSize: 20
+                        },
+                        grid: { 
+                            color: 'rgba(226, 232, 240, 0.2)',
+                            lineWidth: 1
+                        },
+                        angleLines: {
+                            color: 'rgba(226, 232, 240, 0.2)'
+                        },
+                        pointLabels: {
+                            color: '#e2e8f0',
+                            font: { 
+                                size: 11,
+                                weight: 500
+                            }
+                        }
+                    }
+                },
+                plugins: {
+                    legend: {
+                        labels: {
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { weight: 500 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // TARGETS CHART
+        const targetsCtx = document.getElementById('targetsChart').getContext('2d');
+        new Chart(targetsCtx, {
+            type: 'line',
+            data: {
+                labels: ['Jul (Actual)', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'],
+                datasets: [{
+                    label: 'Target Sales (RM M)',
+                    data: [3.72, 4.0, 4.2, 4.5, 4.8, 5.0],
+                    borderColor: '#10b981',
+                    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+                    borderWidth: 4,
+                    borderDash: [0, 0, 5, 5, 5, 5],
+                    fill: true,
+                    tension: 0.4,
+                    pointRadius: [8, 6, 6, 6, 6, 6],
+                    pointHoverRadius: [12, 8, 8, 8, 8, 8],
+                    pointBackgroundColor: ['#ef4444', '#10b981', '#10b981', '#10b981', '#10b981', '#10b981']
+                }, {
+                    label: 'Current Trend (if unchanged)',
+                    data: [3.72, 3.72, 3.72, 3.72, 3.72, 3.72],
+                    borderColor: '#ef4444',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    borderWidth: 3,
+                    fill: true,
+                    pointRadius: 4
+                }]
+            },
+            options: {
+                ...commonOptions,
+                plugins: {
+                    legend: {
+                        labels: { 
+                            usePointStyle: true,
+                            padding: 20,
+                            font: { weight: 500 }
+                        }
+                    }
+                }
+            }
+        });
+
+        // CHART RESPONSIVENESS
+        function makeChartsResponsive() {
+            Chart.helpers.each(Chart.instances, function(instance) {
+                instance.resize();
+            });
+        }
+
+        window.addEventListener('resize', function() {
+            setTimeout(makeChartsResponsive, 100);
+        });
+
+        window.addEventListener('orientationchange', function() {
+            setTimeout(makeChartsResponsive, 500);
+        });
+
+        // PROGRESS BAR ANIMATIONS
+        setTimeout(() => {
+            const revenueProgress = document.getElementById('revenueProgress');
+            const profitProgress = document.getElementById('profitProgress');
+            
+            if (revenueProgress) revenueProgress.style.width = '65%';
+            if (profitProgress) profitProgress.style.width = '40%';
+        }, 1000);
+
+        // SLIDE AUTO-ADVANCE (Optional - disabled by default)
+        // setInterval(nextSlide, 20000);
+
+        // PERFORMANCE MONITORING
+        console.log('PMW Group Dashboard initialized successfully');
+        console.log(`Total slides: ${slides.length}`);
+        console.log(`Charts loaded: ${Chart.instances.length}`);
+
+    </script>
+</body>
+</html>
